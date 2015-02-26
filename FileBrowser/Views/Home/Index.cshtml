@@ -1,0 +1,103 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+<script src="~/Scripts/jquery.min.js"></script>
+<script src="~/Scripts/jquery.easyui.min.js"></script>
+
+<table title="Folder Browser" class="easyui-treegrid" style="width:700px;height:250px" id="filetree">
+</table>
+<div id="tb">
+    <a href="#" class="easyui-linkbutton" iconcls="icon-download" plain="true" onclick="downloadfiles()">Download</a>
+    
+</div>
+<script>   
+    $("#filetree").treegrid({
+        method: 'get',
+        rownumbers: false,
+        idField: 'id',
+        treeField: 'FileName',
+        url: 'Getjson',
+        columns: [[
+               // {field:"ck",checkbox:true,width:40},
+                { title: 'FileName', field: 'FileName', formatter:function(val,row,index){
+                    return "<input id='ck"+row.id+"' TYPE=\"checkbox\"></input>" + row.FileName; } , width: 220 },
+                { title: 'Size', field: 'Size', width: 100, align: 'center',
+                    
+                },
+                { title: 'FullPath', field: 'FullPath', width: 300 },
+        ]],
+        singleSelect: false,
+        toolbar: '#tb',
+        
+        onClickRow: function (row) {
+            var selectedNode = $("#filetree").treegrid('getSelected');
+            if ($('#ck' + row.id).is(":checked") == true)
+                $('#ck' + row.id).prop("checked", false);
+            else
+                $('#ck' + row.id).prop("checked", true);
+            if (selectedNode) {
+                var childNodes = $("#filetree").treegrid('getChildren', row.id);
+                if (childNodes.length > 0) {
+                    if ($('#ck' + row.id).is(":checked") == true) {
+                        for (i = 0; i < childNodes.length; i++) {
+
+                           
+                                $('#ck' + childNodes[i].id).prop("checked", true);
+                                $("#filetree").treegrid('select', childNodes[i].id);
+                            
+                        }
+                    }
+                    else {
+                        for (i = 0; i < childNodes.length; i++) {
+                            $('#ck' + childNodes[i].id).prop("checked", false);
+                            $("#filetree").treegrid('unselect', childNodes[i].id);
+                        }
+                    }
+                }
+
+
+           
+            }
+            
+            
+        }
+    });
+    function downloadfiles() {
+        var rows = $("#filetree").treegrid("getSelections");
+        if (rows.length>0) {
+            var files = [];
+            var temprows=[];
+            [].push.apply(temprows, rows);
+            for (var i = 0; i < temprows.length; i++) {
+                if (temprows[i] == null) continue;
+                if (temprows[i].Size == "") {
+                    temprows[i].FullPath = "[folder]" + temprows[i].FullPath;
+
+                    var children = $("#filetree").treegrid('getChildren', temprows[i].id);
+                    for (var j = 0; j < temprows.length; j++) {
+                        for (var x = 0; x < children.length; x++) {
+                            if (children[x] != null && temprows[j] != null)
+                                if (children[x].id == temprows[j].id) {
+                                    temprows[j] = null;
+                                    break;
+                                }
+                        }
+                    }
+                }
+                files.push(temprows[i].FullPath);
+            }
+            
+            var url = '@Url.Action("Download", "Home")' + "?fullpath=" + files;
+            window.location.href = url;
+        }
+        else {
+           
+        }
+           
+        
+    }
+    
+</script>
